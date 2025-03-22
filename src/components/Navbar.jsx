@@ -1,15 +1,35 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Play } from "lucide-react";
+import { Play, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const Navbar = ({ currentPage, setCurrentPage }) => {
   const navItems = [
     { id: "home", label: "Home" },
-    { id: "get-started", label: "Get Started" },
+    { id: "get-started", label: "Getting Started" },
     { id: "suggest", label: "Suggestion Box" },
     { id: "donate", label: "Donate" },
   ];
+
+  const NavItems = ({ className = "", onClick = () => {} }) => (
+    <div className={className}>
+      {navItems.map((item) => (
+        <button
+          key={item.id}
+          onClick={() => {
+            setCurrentPage(item.id);
+            onClick();
+          }}
+          className={`text-foreground hover:text-primary transition-colors px-3 py-2 block w-full text-left ${
+            currentPage === item.id ? "text-primary" : ""
+          }`}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <nav className="bg-card border-b border-border">
@@ -27,36 +47,27 @@ const Navbar = ({ currentPage, setCurrentPage }) => {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="hidden md:flex md:space-x-4 lg:space-x-8"
+            className="hidden md:flex md:items-center md:space-x-4 lg:space-x-8 flex-nowrap"
           >
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setCurrentPage(item.id)}
-                className={`text-foreground hover:text-primary transition-colors px-3 py-2 ${
-                  currentPage === item.id ? "text-primary" : ""
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
+            <NavItems className="flex space-x-4" />
           </motion.div>
 
-          <div className="md:hidden">
-            <button className="p-2">
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path d="M4 6h16M4 12h16M4 18h16"></path>
-              </svg>
-            </button>
-          </div>
+          <Sheet>
+            <SheetTrigger className="md:hidden p-2">
+              <Menu className="h-6 w-6 text-primary" />
+            </SheetTrigger>
+            <SheetContent className="bg-background border-l border-border">
+              <div className="mt-8">
+                <NavItems 
+                  className="space-y-4" 
+                  onClick={() => {
+                    // Close the sheet by clicking its close button
+                    document.querySelector('[data-radix-collection-item]')?.click();
+                  }} 
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </nav>

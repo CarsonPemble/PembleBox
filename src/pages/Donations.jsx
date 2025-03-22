@@ -40,7 +40,7 @@ const Donations = () => {
           <Coffee className="h-12 w-12 mx-auto text-primary" />
           <h2 className="text-2xl font-semibold text-foreground">Buy me a Coffee</h2>
           <p className="text-muted-foreground">
-            Support PembleBox by buying me a coffee!
+            Please consider supporting to keep the server running.
           </p>
           <a
             href="https://buymeacoffee.com/carsonpemble"
@@ -49,7 +49,7 @@ const Donations = () => {
             className="inline-flex w-full"
           >
             <Button size="lg" className="w-full">
-              <span className="mr-2">Visit Buy Me a Coffee</span>
+              <span className="mr-2">Visit My Donation Page</span>
               <ExternalLink className="h-4 w-4" />
             </Button>
           </a>
@@ -58,7 +58,7 @@ const Donations = () => {
         <div className="bg-card p-6 rounded-xl shadow-lg text-center space-y-4">
           <h2 className="text-2xl font-semibold text-foreground">Bitcoin Donation</h2>
           <div className="aspect-square max-w-[200px] mx-auto bg-white rounded-xl p-4">
-            <p className="text-black text-sm">Bitcoin QR code placeholder</p>
+            <img  alt="Bitcoin QR Code" class="w-full h-full" src="https://images.unsplash.com/photo-1655804472974-67e35a039ec6" />
           </div>
           <div className="flex items-center gap-2 bg-background p-3 rounded-lg">
             <code className="flex-1 text-sm text-foreground overflow-x-auto">

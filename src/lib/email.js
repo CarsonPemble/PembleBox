@@ -1,20 +1,27 @@
 
-import sgMail from '@sendgrid/mail';
+import nodemailer from 'nodemailer';
 
-// Initialize SendGrid with your API key
-// You'll need to set this in your environment variables
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+// Create reusable transporter object using SMTP transport
+const transporter = nodemailer.createTransport({
+  host: 'smtp.hostinger.com',
+  port: 465,
+  secure: true, // true for 465, false for other ports
+  auth: {
+    user: 'admin@pemblebox.com',
+    pass: process.env.EMAIL_PASSWORD // You'll need to set this in your environment variables
+  }
+});
 
 export const sendEmail = async ({ to, subject, text }) => {
-  const msg = {
+  const mailOptions = {
+    from: 'admin@pemblebox.com',
     to,
-    from: 'your-verified-sender@example.com', // Replace with your verified sender
     subject,
     text,
   };
 
   try {
-    await sgMail.send(msg);
+    await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error) {
     console.error('Error sending email:', error);

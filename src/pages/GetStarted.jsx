@@ -38,7 +38,7 @@ const GetStarted = () => {
     },
   ];
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!email) {
       toast({
@@ -49,34 +49,20 @@ const GetStarted = () => {
       return;
     }
 
-    try {
-      // Send email using a serverless function or email service
-      const response = await fetch("/api/send-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          to: "carsonpemble777@gmail.com",
-          subject: "PembleBox New User Request",
-          text: `New user request from: ${email}`,
-        }),
-      });
+    // Store in localStorage for now
+    const requests = JSON.parse(localStorage.getItem("plexRequests") || "[]");
+    requests.push({
+      email,
+      date: new Date().toISOString(),
+      status: "pending"
+    });
+    localStorage.setItem("plexRequests", JSON.stringify(requests));
 
-      if (!response.ok) throw new Error("Failed to send email");
-
-      toast({
-        title: "Success!",
-        description: "We'll send you an invite within 24 hours!",
-      });
-      setEmail("");
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to submit request. Please try again.",
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "Success!",
+      description: "We'll send you an invite within 24 hours!",
+    });
+    setEmail("");
   };
 
   return (

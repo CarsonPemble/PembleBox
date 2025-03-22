@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Button } from "../components/ui/button";
 import { useToast } from "../components/ui/use-toast";
 import { Check, Clock, Trash2 } from "lucide-react";
+import { supabase } from "../lib/supabase";
 
 const SuggestTitle = () => {
   const { toast } = useToast();
@@ -18,12 +19,46 @@ const SuggestTitle = () => {
   const contentTypes = ["Movies", "TV Shows", "Audiobooks", "Music", "Other"];
 
   React.useEffect(() => {
-    // Load suggestions from localStorage initially
-    const savedSuggestions = JSON.parse(localStorage.getItem("suggestions") || "[]");
-    setSuggestions(savedSuggestions);
+    // Fetch initial suggestions
+    fetchSuggestions();
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('suggestions_channel')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'suggestions'
+      }, (payload) => {
+        fetchSuggestions();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  const handleSubmit = (e) => {
+  const fetchSuggestions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('suggestions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSuggestions(data || []);
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load suggestions",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.type || !formData.title) {
       toast({
@@ -34,51 +69,84 @@ const SuggestTitle = () => {
       return;
     }
 
-    const newSuggestion = {
-      ...formData,
-      id: Date.now(),
-      date: new Date().toISOString(),
-      status: "pending"
-    };
+    try {
+      const { error } = await supabase
+        .from('suggestions')
+        .insert([{
+          title: formData.title,
+          type: formData.type,
+          details: formData.details,
+          status: 'pending'
+        }]);
 
-    // Update local state and localStorage
-    const updatedSuggestions = [newSuggestion, ...suggestions];
-    setSuggestions(updatedSuggestions);
-    localStorage.setItem("suggestions", JSON.stringify(updatedSuggestions));
+      if (error) throw error;
 
-    toast({
-      title: "Success!",
-      description: "Your suggestion has been submitted. Thank you!",
-    });
+      toast({
+        title: "Success!",
+        description: "Your suggestion has been submitted. Thank you!",
+      });
 
-    setFormData({ type: "", title: "", details: "" });
+      setFormData({ type: "", title: "", details: "" });
+    } catch (error) {
+      console.error('Error inserting suggestion:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit suggestion",
+        variant: "destructive",
+      });
+    }
   };
 
-  const toggleSuggestionStatus = (id) => {
+  const toggleSuggestionStatus = async (id) => {
     if (!isAdmin) return;
 
-    const updatedSuggestions = suggestions.map(suggestion =>
-      suggestion.id === id
-        ? { ...suggestion, status: suggestion.status === "pending" ? "added" : "pending" }
-        : suggestion
-    );
+    try {
+      const suggestion = suggestions.find(s => s.id === id);
+      const newStatus = suggestion.status === "pending" ? "added" : "pending";
+      
+      const { error } = await supabase
+        .from('suggestions')
+        .update({ 
+          status: newStatus,
+          is_added: newStatus === "added"
+        })
+        .eq('id', id);
 
-    setSuggestions(updatedSuggestions);
-    localStorage.setItem("suggestions", JSON.stringify(updatedSuggestions));
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating suggestion:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update suggestion status",
+        variant: "destructive",
+      });
+    }
   };
 
-  const removeSuggestion = (id, e) => {
+  const removeSuggestion = async (id, e) => {
     e.stopPropagation();
     if (!isAdmin) return;
 
-    const updatedSuggestions = suggestions.filter(suggestion => suggestion.id !== id);
-    setSuggestions(updatedSuggestions);
-    localStorage.setItem("suggestions", JSON.stringify(updatedSuggestions));
+    try {
+      const { error } = await supabase
+        .from('suggestions')
+        .delete()
+        .eq('id', id);
 
-    toast({
-      title: "Removed",
-      description: "Suggestion has been removed",
-    });
+      if (error) throw error;
+
+      toast({
+        title: "Removed",
+        description: "Suggestion has been removed",
+      });
+    } catch (error) {
+      console.error('Error removing suggestion:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove suggestion",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -181,7 +249,7 @@ const SuggestTitle = () => {
                       {suggestion.title}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {suggestion.type} • {new Date(suggestion.date).toLocaleDateString()}
+                      {suggestion.type} • {new Date(suggestion.created_at).toLocaleDateString()}
                     </p>
                     {suggestion.details && (
                       <p className="text-sm text-muted-foreground mt-2">
